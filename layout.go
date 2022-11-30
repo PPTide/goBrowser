@@ -16,12 +16,14 @@ type displayItem struct {
 
 type display struct {
 	cursor_x float32
+	cursor_y float32
 }
 
 func (d *document) Layout() {
 	d.displayList = make([]displayItem, 0)
 	display := display{
 		cursor_x: 20,
+		cursor_y: 20,
 	}
 	/*d.displayList[0] = displayItem{
 		text:     d.body,
@@ -49,14 +51,23 @@ func (d *document) addText(n node, display *display) {
 		}
 		wSize := rl.MeasureTextEx(fonts[0], w, 16, 0)
 
+		if display.cursor_x+wSize.X > float32(rl.GetScreenWidth()) {
+			d.flush(display)
+		}
+
 		d.displayList = append(d.displayList, displayItem{
 			text:     w,
 			font:     fonts[0],
-			position: rl.NewVector2(display.cursor_x, 20),
+			position: rl.NewVector2(display.cursor_x, display.cursor_y),
 			fontSize: 16,
 			color:    rl.Black,
 		})
 
 		display.cursor_x += wSize.X + rl.MeasureTextEx(fonts[0], " ", 16, 0).X
 	}
+}
+
+func (d *document) flush(display *display) {
+	display.cursor_x = 20
+	display.cursor_y += float32(fonts[0].BaseSize)
 }
