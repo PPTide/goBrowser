@@ -51,6 +51,9 @@ func (d *document) recourse(treeNode node, display *display) {
 		if treeNode.getTag() == "h1" { //FIXME: only test
 			d.flush(display)
 		}
+		if treeNode.getTag() == "script" || treeNode.getTag() == "head" {
+			return
+		}
 		for _, c := range treeNode.getChildren() {
 			d.recourse(c, display)
 		}
