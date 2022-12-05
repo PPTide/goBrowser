@@ -169,14 +169,14 @@ func arrayContains(array []string, contains string) bool {
 }
 
 func (d *document) addTag(tag string) {
-	if strings.Split(tag, "")[0] == "!" {
+	if tag[0] == '!' { //TODO: This is temporary (it will stay here for ever :-) )
 		return
 	}
 	//TODO: split off attributes for real
 	tag = strings.Split(tag, " ")[0]
 	d.implicitTags(tag)
 	//TODO: add support for ending tags and self closing tags
-	if strings.Split(tag, "")[0] == "/" { //closing Tag
+	if tag[0] == '/' { //closing Tag
 		if len(d.unfinished) == 1 {
 			return
 		}
@@ -187,7 +187,7 @@ func (d *document) addTag(tag string) {
 		return
 	}
 
-	if strings.Split(tag, "")[len(strings.Split(tag, ""))-1] == "/" || arrayContains(SELF_CLOSING_TAGS[:], tag) { //self closing tag
+	if tag[len(tag)-1] == '/' || arrayContains(SELF_CLOSING_TAGS[:], tag) { //self closing tag
 		parent := d.unfinished[len(d.unfinished)-1]
 		n := &element{
 			tag:    tag,
