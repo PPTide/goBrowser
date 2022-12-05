@@ -19,6 +19,8 @@ type display struct {
 	cursor_y float32
 }
 
+//TODO: turn layout into a struct
+
 func (d *document) Layout() {
 	d.displayList = make([]displayItem, 0)
 	display := display{
@@ -33,9 +35,7 @@ func (d *document) Layout() {
 		color:    rl.Black,
 	}*/
 	for _, n := range d.document.getChildren() {
-		if true { //TODO: check if text
-			d.addText(n, &display)
-		}
+		d.recourse(n, &display)
 	}
 
 	for _, v := range d.displayList {
@@ -43,7 +43,24 @@ func (d *document) Layout() {
 	}
 }
 
-func (d *document) addText(n node, display *display) {
+func (d *document) recourse(treeNode node, display *display) {
+	if treeNode.isText() {
+		d.displayText(treeNode, display)
+	} else {
+		//TODO: open and close tag
+		if treeNode.getTag() == "h1" { //FIXME: only test
+			d.flush(display)
+		}
+		for _, c := range treeNode.getChildren() {
+			d.recourse(c, display)
+		}
+		if treeNode.getTag() == "h1" || treeNode.getTag() == "br" || treeNode.getTag() == "p" { //FIXME: only test
+			d.flush(display)
+		}
+	}
+}
+
+func (d *document) displayText(n node, display *display) {
 	for _, w := range strings.Split(n.getText(), " ") {
 		w = strings.TrimSpace(w)
 		if len(w) == 0 {

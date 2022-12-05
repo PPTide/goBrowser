@@ -30,7 +30,7 @@ func request(url string) (headers []string, body string, er error) {
 	} else if schema == "https" {
 		con, err = tls.Dial("tcp", host+":443", nil)
 	} else {
-		er = fmt.Errorf("schema \"" + schema + "\" not implemented")
+		er = fmt.Errorf("schema \"" + schema + "\" not implemented") //TODO: add support for other schemas (file, view-source:, data:)
 		return
 	}
 	checkErr(err)

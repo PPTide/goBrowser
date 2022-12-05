@@ -11,7 +11,7 @@ type document struct {
 	body        string
 	document    node
 	displayList []displayItem
-	test        string
+	unfinished  []node
 }
 
 func CreateDocument(pageUrl string) *document {
