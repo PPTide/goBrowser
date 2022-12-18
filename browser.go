@@ -18,13 +18,19 @@ func CreateDocument(pageUrl string) *document {
 	head, body, err := request(pageUrl)
 	checkErr(err)
 
-	status := strings.Split(head[0], " ")
+	var status []string = make([]string, 2)
+	if head == nil {
+		status[1] = "200"
+	} else {
+		status = strings.Split(head[0], " ")
+	}
 
 	headers := make(map[string]string)
-
-	for _, header := range head[1:] {
-		h := strings.SplitN(header, ": ", 2)
-		headers[strings.ToLower(h[0])] = h[1]
+	if head != nil {
+		for _, header := range head[1:] {
+			h := strings.SplitN(header, ": ", 2)
+			headers[strings.ToLower(h[0])] = h[1]
+		}
 	}
 
 	switch status[1] {

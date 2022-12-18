@@ -13,27 +13,40 @@ func request(url string) (headers []string, body string, er error) {
 	split := strings.SplitN(url, "://", 2)
 	schema := split[0]
 
-	split = strings.SplitN(split[1], "/", 2)
-	host := split[0]
-	path := "/" + split[1]
-	_ = path
+	splits := strings.SplitN(split[1], "/", 2)
+	host := splits[0]
 
 	if strings.Contains(host, ":") {
 		er = fmt.Errorf("custom port not supported")
 		return
 	}
 
-	var con net.Conn
-	var err error
 	if schema == "http" {
-		con, err = net.Dial("tcp", host+":80")
+		con, err := net.Dial("tcp", host+":80")
+		return http(url, con, err)
 	} else if schema == "https" {
-		con, err = tls.Dial("tcp", host+":443", nil)
+		con, err := tls.Dial("tcp", host+":443", nil)
+		return http(url, con, err)
+	} else if schema == "file" {
+		//get the content of the file
+		content, err := ioutil.ReadFile(split[1])
+		checkErr(err)
+		return nil, string(content), nil
 	} else {
 		er = fmt.Errorf("schema \"" + schema + "\" not implemented") //TODO: add support for other schemas (file, view-source:, data:)
 		return
 	}
+}
+
+func http(url string, con net.Conn, err error) (headers []string, body string, er error) {
 	checkErr(err)
+
+	split := strings.SplitN(url, "://", 2)
+
+	split = strings.SplitN(split[1], "/", 2)
+	host := split[0]
+	path := "/" + split[1]
+	_ = path
 
 	defer con.Close()
 
