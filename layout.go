@@ -54,7 +54,7 @@ func (d *Document) recourse(treeNode node, display *display) {
 			d.flush(display)
 			display.fontSize += 10
 		}
-		if treeNode.getTag() == "script" || treeNode.getTag() == "head" {
+		if treeNode.getTag() == "script" || treeNode.getTag() == "style" || treeNode.getTag() == "head" {
 			return
 		}
 		for _, c := range treeNode.getChildren() {

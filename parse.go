@@ -22,6 +22,11 @@ var SELF_CLOSING_TAGS = [...]string{
 	"wbr",
 }
 
+var RAWTEXT_TYPES = [...]string{
+	"script",
+	"style",
+}
+
 type node interface {
 	getParent() node
 	getChildren() []node
@@ -103,20 +108,14 @@ func (d *Document) parseHTML() {
 	//TODO: implement Documentation: https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 	currentText := ""
 	inTag := false
-	inScript := false
 	inRawtext := false
+	rawtextType := ""
 	r := strings.NewReader(d.body)
 	d.document = &element{}
 	//FIXME: I'm also parsing inline css and js which may include <>, right?
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
-		if inScript {
-			//TODO: implement the spec somewhat: https://html.spec.whatwg.org/multipage/parsing.html#script-data-state
-		}
-		if inRawtext {
-			//TODO: implement the spec somewhat: https://html.spec.whatwg.org/multipage/parsing.html#rawtext-state
-		}
 		switch c {
 		case '<':
 			inTag = true
@@ -124,10 +123,21 @@ func (d *Document) parseHTML() {
 			currentText = ""
 		case '>':
 			inTag = false
+			if inRawtext && currentText != "/"+rawtextType {
+				currentText = "<" + currentText + ">"
+				continue
+			}
 			d.addTag(currentText)
 			/* TODO: if added tag has special use here switch to the appropriate state:
 			 *  https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments:rawtext-state
 			 */
+			if arrayContains(RAWTEXT_TYPES[:], currentText) {
+				inRawtext = true
+				rawtextType = currentText
+			}
+			if inRawtext && currentText == "/"+rawtextType {
+				inRawtext = false
+			}
 			currentText = ""
 		default:
 			currentText += string(c)
@@ -190,7 +200,6 @@ func (d *Document) addTag(tag string) {
 	if len(tag) == 0 {
 		panic("ahhhhhh")
 	}
-	//TODO: add support for ending tags and self closing tags
 	if tag[0] == '/' { //closing Tag
 		if len(d.unfinished) == 1 {
 			return
