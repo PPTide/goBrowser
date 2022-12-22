@@ -81,7 +81,7 @@ func (d *Document) displayText(n node, display *display) {
 			d.flush(display)
 		}
 
-		d.displayList = append(d.displayList, displayItem{
+		d.displayList = append(d.displayList, displayItem{ //TODO: add displayItems to line and to displayList in flush
 			text:     w,
 			font:     fonts[0],
 			position: rl.NewVector2(display.cursorX, display.cursorY),
