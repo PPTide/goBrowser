@@ -15,8 +15,8 @@ const (
 )
 
 var (
-	fonts  []rl.Font = make([]rl.Font, 1)
-	scroll float32   = 0
+	fonts          = make([]rl.Font, 1)
+	scroll float32 = 0
 )
 
 func main() {

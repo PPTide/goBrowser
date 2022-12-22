@@ -15,17 +15,17 @@ type displayItem struct {
 }
 
 type display struct {
-	cursor_x float32
-	cursor_y float32
+	cursorX float32
+	cursorY float32
 }
 
 //TODO: turn layout into a struct
 
-func (d *document) Layout() {
+func (d *Document) Layout() {
 	d.displayList = make([]displayItem, 0)
 	display := display{
-		cursor_x: 20,
-		cursor_y: 20,
+		cursorX: 20,
+		cursorY: 20,
 	}
 	/*d.displayList[0] = displayItem{
 		text:     d.body,
@@ -43,7 +43,7 @@ func (d *document) Layout() {
 	}
 }
 
-func (d *document) recourse(treeNode node, display *display) {
+func (d *Document) recourse(treeNode node, display *display) {
 	if treeNode.isText() {
 		d.displayText(treeNode, display)
 	} else {
@@ -63,7 +63,7 @@ func (d *document) recourse(treeNode node, display *display) {
 	}
 }
 
-func (d *document) displayText(n node, display *display) {
+func (d *Document) displayText(n node, display *display) {
 	for _, w := range strings.Split(n.getText(), " ") {
 		w = strings.TrimSpace(w)
 		if len(w) == 0 {
@@ -71,23 +71,23 @@ func (d *document) displayText(n node, display *display) {
 		}
 		wSize := rl.MeasureTextEx(fonts[0], w, 16, 0)
 
-		if display.cursor_x+wSize.X > float32(rl.GetScreenWidth()) {
+		if display.cursorX+wSize.X > float32(rl.GetScreenWidth()) {
 			d.flush(display)
 		}
 
 		d.displayList = append(d.displayList, displayItem{
 			text:     w,
 			font:     fonts[0],
-			position: rl.NewVector2(display.cursor_x, display.cursor_y),
+			position: rl.NewVector2(display.cursorX, display.cursorY),
 			fontSize: 16,
 			color:    rl.Black,
 		})
 
-		display.cursor_x += wSize.X + rl.MeasureTextEx(fonts[0], " ", 16, 0).X
+		display.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", 16, 0).X
 	}
 }
 
-func (d *document) flush(display *display) {
-	display.cursor_x = 20
-	display.cursor_y += float32(fonts[0].BaseSize)
+func (d *Document) flush(display *display) {
+	display.cursorX = 20
+	display.cursorY += float32(fonts[0].BaseSize)
 }

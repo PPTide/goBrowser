@@ -6,7 +6,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-type document struct {
+type Document struct {
 	headers     map[string]string
 	body        string
 	document    node
@@ -14,11 +14,11 @@ type document struct {
 	unfinished  []node
 }
 
-func CreateDocument(pageUrl string) *document {
+func CreateDocument(pageUrl string) *Document {
 	head, body, err := request(pageUrl)
 	checkErr(err)
 
-	var status []string = make([]string, 2)
+	var status = make([]string, 2)
 	if head == nil {
 		status[1] = "200"
 	} else {
@@ -40,10 +40,10 @@ func CreateDocument(pageUrl string) *document {
 		locationURL := headers["location"]
 		return CreateDocument(locationURL)
 	default:
-		panic("Got unsupported staus code: " + strings.Join(status[1:], " "))
+		panic("Got unsupported status code: " + strings.Join(status[1:], " "))
 	}
 
-	d := document{
+	d := Document{
 		headers: headers,
 		body:    body,
 	}
@@ -51,7 +51,7 @@ func CreateDocument(pageUrl string) *document {
 	return &d
 }
 
-func (d *document) Draw() {
+func (d *Document) Draw() {
 	//TODO: make better
 	if rl.IsWindowResized() {
 		d.Layout()

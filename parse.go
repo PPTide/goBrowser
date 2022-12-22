@@ -58,7 +58,7 @@ func (e *element) getTag() string {
 	return e.tag
 }
 
-func (e *text) getTag() string {
+func (t *text) getTag() string {
 	log.Panicf("idk why a text node should have children... if your reading this you probably know that...") //TODO: change to return err
 	return "err"
 }
@@ -67,13 +67,13 @@ func (e *element) addChild(n node) {
 	e.children = append(e.children, n)
 }
 
-func (e *text) addChild(n node) {
+func (t *text) addChild(n node) {
 	//e.children = append(e.children, n)
 	log.Panicf("idk why a text node should have children... if your reading this you probably know that...") //TODO: change to return err
 }
 
-func (e *text) getText() string {
-	return e.text
+func (t *text) getText() string {
+	return t.text
 }
 
 func (e *element) getText() string {
@@ -99,7 +99,7 @@ func (e *element) getChildren() []node {
 	return e.children
 }
 
-func (d *document) parseHTML() {
+func (d *Document) parseHTML() {
 	//TODO: implement Documentation: https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 	currentText := ""
 	inTag := false
@@ -142,7 +142,7 @@ func (d *document) parseHTML() {
 	d.document.addChild(d.unfinished[0])
 }
 
-func (d *document) addText(t string) {
+func (d *Document) addText(t string) {
 	if len(strings.TrimSpace(t)) == 0 {
 		return
 	}
@@ -156,7 +156,7 @@ func (d *document) addText(t string) {
 	})
 }
 
-func (d *document) implicitTags(tag string) {
+func (d *Document) implicitTags(tag string) {
 	for {
 		openTags := make([]string, 0)
 		for _, v := range d.unfinished {
@@ -180,7 +180,7 @@ func arrayContains(array []string, contains string) bool {
 	return false
 }
 
-func (d *document) addTag(tag string) {
+func (d *Document) addTag(tag string) {
 	if tag[0] == '!' { //TODO: This is temporary (it will stay here for ever :-) )
 		return
 	}
