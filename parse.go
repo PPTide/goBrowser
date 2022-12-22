@@ -103,11 +103,20 @@ func (d *document) parseHTML() {
 	//TODO: implement Documentation: https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 	currentText := ""
 	inTag := false
+	inScript := false
+	inRawtext := false
 	r := strings.NewReader(d.body)
 	d.document = &element{}
+	//FIXME: I'm also parsing inline css and js which may include <>, right?
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
+		if inScript {
+			//TODO: implement the spec somewhat: https://html.spec.whatwg.org/multipage/parsing.html#script-data-state
+		}
+		if inRawtext {
+			//TODO: implement the spec somewhat: https://html.spec.whatwg.org/multipage/parsing.html#rawtext-state
+		}
 		switch c {
 		case '<':
 			inTag = true
@@ -116,6 +125,9 @@ func (d *document) parseHTML() {
 		case '>':
 			inTag = false
 			d.addTag(currentText)
+			/* TODO: if added tag has special use here switch to the appropriate state:
+			 *  https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments:rawtext-state
+			 */
 			currentText = ""
 		default:
 			currentText += string(c)
@@ -175,6 +187,9 @@ func (d *document) addTag(tag string) {
 	//TODO: split off attributes for real
 	tag = strings.Split(tag, " ")[0]
 	d.implicitTags(tag)
+	if len(tag) == 0 {
+		panic("ahhhhhh")
+	}
 	//TODO: add support for ending tags and self closing tags
 	if tag[0] == '/' { //closing Tag
 		if len(d.unfinished) == 1 {
