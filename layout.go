@@ -15,8 +15,9 @@ type displayItem struct {
 }
 
 type display struct {
-	cursorX float32
-	cursorY float32
+	cursorX  float32
+	cursorY  float32
+	fontSize float32
 }
 
 //TODO: turn layout into a struct
@@ -24,8 +25,9 @@ type display struct {
 func (d *Document) Layout() {
 	d.displayList = make([]displayItem, 0)
 	display := display{
-		cursorX: 20,
-		cursorY: 20,
+		cursorX:  20,
+		cursorY:  20,
+		fontSize: 16,
 	}
 	/*d.displayList[0] = displayItem{
 		text:     d.body,
@@ -50,6 +52,7 @@ func (d *Document) recourse(treeNode node, display *display) {
 		//TODO: open and close tag
 		if treeNode.getTag() == "h1" { //FIXME: only test
 			d.flush(display)
+			display.fontSize += 10
 		}
 		if treeNode.getTag() == "script" || treeNode.getTag() == "head" {
 			return
@@ -60,6 +63,9 @@ func (d *Document) recourse(treeNode node, display *display) {
 		if treeNode.getTag() == "h1" || treeNode.getTag() == "br" || treeNode.getTag() == "p" { //FIXME: only test
 			d.flush(display)
 		}
+		if treeNode.getTag() == "h1" {
+			display.fontSize -= 10
+		}
 	}
 }
 
@@ -69,7 +75,7 @@ func (d *Document) displayText(n node, display *display) {
 		if len(w) == 0 {
 			continue
 		}
-		wSize := rl.MeasureTextEx(fonts[0], w, 16, 0)
+		wSize := rl.MeasureTextEx(fonts[0], w, display.fontSize, 0)
 
 		if display.cursorX+wSize.X > float32(rl.GetScreenWidth()) {
 			d.flush(display)
@@ -79,15 +85,16 @@ func (d *Document) displayText(n node, display *display) {
 			text:     w,
 			font:     fonts[0],
 			position: rl.NewVector2(display.cursorX, display.cursorY),
-			fontSize: 16,
+			fontSize: display.fontSize,
 			color:    rl.Black,
 		})
 
-		display.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", 16, 0).X
+		display.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", display.fontSize, 0).X
 	}
 }
 
 func (d *Document) flush(display *display) {
 	display.cursorX = 20
-	display.cursorY += float32(fonts[0].BaseSize)
+	display.cursorY += rl.MeasureTextEx(fonts[0], " ", display.fontSize, 0).Y
+	//display.cursorY += float32(fonts[0].BaseSize)
 }
