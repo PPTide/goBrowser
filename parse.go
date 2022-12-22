@@ -36,7 +36,9 @@ type node interface {
 	isText() bool
 }
 
-type attribute struct{}
+type attribute struct {
+	test string
+}
 
 type text struct {
 	text   string
@@ -110,16 +112,48 @@ func (d *Document) parseHTML() {
 	inTag := false
 	inRawtext := false
 	rawtextType := ""
+	inComment := false
 	r := strings.NewReader(d.body)
 	d.document = &element{}
 	//FIXME: I'm also parsing inline css and js which may include <>, right?
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
+		if inComment && c == '-' {
+			r1, _, err := r.ReadRune()
+			checkErr(err)
+			r2, _, err := r.ReadRune()
+			checkErr(err)
+			if r1 == '-' && r2 == '>' {
+				inComment = false
+				currentText = ""
+			} else {
+				currentText += string(c)
+				_, err = r.Seek(-2, 1)
+				checkErr(err)
+			}
+			continue
+		}
+		if inComment {
+			currentText += string(c)
+			continue
+		}
 		switch c {
 		case '<':
 			inTag = true
 			d.addText(currentText)
+			r1, _, err := r.ReadRune()
+			checkErr(err)
+			r2, _, err := r.ReadRune()
+			checkErr(err)
+			r3, _, err := r.ReadRune()
+			checkErr(err)
+			if r1 == '!' && r2 == '-' && r3 == '-' {
+				inComment = true
+			} else {
+				_, err = r.Seek(-3, 1)
+				checkErr(err)
+			}
 			currentText = ""
 		case '>':
 			inTag = false
@@ -131,9 +165,9 @@ func (d *Document) parseHTML() {
 			/* TODO: if added tag has special use here switch to the appropriate state:
 			 *  https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments:rawtext-state
 			 */
-			if arrayContains(RAWTEXT_TYPES[:], currentText) {
+			if arrayContains(RAWTEXT_TYPES[:], strings.Split(currentText, " ")[0]) {
 				inRawtext = true
-				rawtextType = currentText
+				rawtextType = strings.Split(currentText, " ")[0]
 			}
 			if inRawtext && currentText == "/"+rawtextType {
 				inRawtext = false
@@ -195,12 +229,16 @@ func (d *Document) addTag(tag string) {
 		return
 	}
 	//TODO: split off attributes for real
-	tag = strings.Split(tag, " ")[0]
-	d.implicitTags(tag)
-	if len(tag) == 0 {
+	splitTag := strings.SplitN(tag, " ", 2)
+	tagName := splitTag[0]
+	if len(splitTag) < 2 {
+		splitTag = append(splitTag, "")
+	}
+	d.implicitTags(tagName)
+	if len(tagName) == 0 {
 		panic("ahhhhhh")
 	}
-	if tag[0] == '/' { //closing Tag
+	if tagName[0] == '/' { //closing Tag
 		if len(d.unfinished) == 1 {
 			return
 		}
@@ -211,11 +249,12 @@ func (d *Document) addTag(tag string) {
 		return
 	}
 
-	if tag[len(tag)-1] == '/' || arrayContains(SELF_CLOSING_TAGS[:], tag) { //self closing tag
+	if tag[len(tag)-1] == '/' || arrayContains(SELF_CLOSING_TAGS[:], tagName) { //self closing tag
 		parent := d.unfinished[len(d.unfinished)-1]
 		n := &element{
-			tag:    tag,
-			parent: parent, //TODO: add attribute
+			tag:        tagName,
+			parent:     parent, //TODO: add attribute
+			attributes: attribute{test: splitTag[1]},
 		}
 		parent.addChild(n)
 		return
@@ -227,8 +266,9 @@ func (d *Document) addTag(tag string) {
 		parent = d.unfinished[len(d.unfinished)-1]
 	}
 	n := &element{
-		tag:    tag,
-		parent: parent, //TODO: add attribute
+		tag:        tagName,
+		parent:     parent, //TODO: add attribute
+		attributes: attribute{test: splitTag[1]},
 	}
 	d.unfinished = append(d.unfinished, n)
 }

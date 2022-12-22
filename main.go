@@ -28,7 +28,7 @@ func main() {
 	if len(args) > 0 {
 		pageUrl = args[0]
 	} else {
-		pageUrl = "https://pptie.de/en/"
+		pageUrl = "https://en.wikipedia.org/wiki/ELISA"
 	}
 
 	fonts[0] = rl.LoadFont("fonts/Arial.ttf")
