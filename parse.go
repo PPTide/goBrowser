@@ -180,8 +180,18 @@ func (d *Document) parseHTML() {
 	if !inTag && len(currentText) > 0 {
 		d.addText(currentText)
 	}
-	if len(d.unfinished) != 1 {
-		log.Panic("Not one unfinished node")
+	d.finishParsing()
+}
+
+func (d *Document) finishParsing() {
+	if len(d.unfinished) == 0 {
+		d.addTag("html")
+	}
+	for len(d.unfinished) > 1 {
+		n := d.unfinished[len(d.unfinished)-1]
+		d.unfinished = d.unfinished[:len(d.unfinished)-1]
+		parent := d.unfinished[len(d.unfinished)-1]
+		parent.addChild(n)
 	}
 	d.document.addChild(d.unfinished[0])
 }
