@@ -38,10 +38,6 @@ type node interface {
 	printTree(int)
 }
 
-type attribute struct {
-	test string
-}
-
 type text struct {
 	text   string
 	parent node
@@ -50,7 +46,7 @@ type text struct {
 
 type element struct {
 	tag        string
-	attributes attribute
+	attributes map[string]string
 	parent     node
 	children   []node
 }
@@ -237,16 +233,42 @@ func arrayContains(array []string, contains string) bool {
 	return false
 }
 
+func getAttributes(attribString string) (attribs map[string]string) {
+	if len(attribString) == 0 {
+		return nil
+	}
+	attribs = map[string]string{}
+	attribPairs := strings.Split(attribString, " ")
+	for i := 0; i < len(attribPairs); i++ {
+		attribPair := attribPairs[i]
+		if !strings.Contains(attribPair, "=") {
+			attribs[attribPair] = ""
+			continue
+		}
+		split := strings.SplitN(attribPair, "=", 2)
+		value := split[1]
+		if len(value) > 2 && (value[0] == '"' || value[0] == '\'') {
+			for value[len(value)-1] != value[0] {
+				i++
+				value += " " + attribPairs[i]
+			}
+			value = value[1 : len(value)-1]
+		}
+		attribs[split[0]] = value
+	}
+	return
+}
+
 func (d *Document) addTag(tag string) {
 	if tag[0] == '!' { //TODO: This is temporary (it will stay here for ever :-) )
 		return
 	}
-	//TODO: split off attributes for real
 	splitTag := strings.SplitN(tag, " ", 2)
 	tagName := splitTag[0]
 	if len(splitTag) < 2 {
 		splitTag = append(splitTag, "")
 	}
+	attributes := getAttributes(splitTag[1])
 	d.implicitTags(tagName)
 	if len(tagName) == 0 {
 		panic("ahhhhhh")
@@ -266,8 +288,8 @@ func (d *Document) addTag(tag string) {
 		parent := d.unfinished[len(d.unfinished)-1]
 		n := &element{
 			tag:        tagName,
-			parent:     parent, //TODO: add attribute
-			attributes: attribute{test: splitTag[1]},
+			parent:     parent,
+			attributes: attributes,
 		}
 		parent.addChild(n)
 		return
@@ -280,8 +302,8 @@ func (d *Document) addTag(tag string) {
 	}
 	n := &element{
 		tag:        tagName,
-		parent:     parent, //TODO: add attribute
-		attributes: attribute{test: splitTag[1]},
+		parent:     parent,
+		attributes: attributes,
 	}
 	d.unfinished = append(d.unfinished, n)
 }
