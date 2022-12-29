@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 )
@@ -34,6 +35,7 @@ type node interface {
 	getText() string
 	getTag() string
 	isText() bool
+	printTree(int)
 }
 
 type attribute struct {
@@ -194,6 +196,7 @@ func (d *Document) finishParsing() {
 		parent.addChild(n)
 	}
 	d.document.addChild(d.unfinished[0])
+	d.unfinished[0].printTree(0)
 }
 
 func (d *Document) addText(t string) {
@@ -281,4 +284,15 @@ func (d *Document) addTag(tag string) {
 		attributes: attribute{test: splitTag[1]},
 	}
 	d.unfinished = append(d.unfinished, n)
+}
+
+func (e *element) printTree(indent int) {
+	fmt.Printf("%s<%s %s>\n", strings.Repeat(" ", indent), e.tag, e.attributes)
+	for _, child := range e.children {
+		child.printTree(indent + 2)
+	}
+}
+
+func (t *text) printTree(indent int) {
+	println(strings.Repeat(" ", indent) + strings.ReplaceAll(t.text, "\n", "\\n"))
 }

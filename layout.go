@@ -40,9 +40,9 @@ func (d *Document) Layout() {
 		d.recourse(n, &display)
 	}
 
-	for _, v := range d.displayList {
+	/*for _, v := range d.displayList {
 		println(v.text)
-	}
+	}*/
 }
 
 func (d *Document) recourse(treeNode node, display *display) {
