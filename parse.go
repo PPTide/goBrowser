@@ -113,7 +113,6 @@ func (d *Document) parseHTML() {
 	inComment := false
 	r := strings.NewReader(d.body)
 	d.document = &element{}
-	//FIXME: I'm also parsing inline css and js which may include <>, right?
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
