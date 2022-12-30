@@ -18,6 +18,7 @@ type display struct {
 	cursorX  float32
 	cursorY  float32
 	fontSize float32
+	line     []displayItem
 }
 
 //TODO: turn layout into a struct
@@ -39,6 +40,7 @@ func (d *Document) Layout() {
 	for _, n := range d.document.getChildren() {
 		d.recourse(n, &display)
 	}
+	d.flush(&display)
 
 	/*for _, v := range d.displayList {
 		println(v.text)
@@ -57,6 +59,9 @@ func (d *Document) recourse(treeNode node, display *display) {
 		if treeNode.getTag() == "script" || treeNode.getTag() == "style" || treeNode.getTag() == "head" {
 			return
 		}
+		if treeNode.getTag() == "big" {
+			display.fontSize += 4
+		}
 		for _, c := range treeNode.getChildren() {
 			d.recourse(c, display)
 		}
@@ -65,6 +70,9 @@ func (d *Document) recourse(treeNode node, display *display) {
 		}
 		if treeNode.getTag() == "h1" {
 			display.fontSize -= 10
+		}
+		if treeNode.getTag() == "big" {
+			display.fontSize -= 4
 		}
 	}
 }
@@ -81,7 +89,7 @@ func (d *Document) displayText(n node, display *display) {
 			d.flush(display)
 		}
 
-		d.displayList = append(d.displayList, displayItem{ //TODO: add displayItems to line and to displayList in flush
+		display.line = append(display.line, displayItem{
 			text:     w,
 			font:     fonts[0],
 			position: rl.NewVector2(display.cursorX, display.cursorY),
@@ -93,8 +101,22 @@ func (d *Document) displayText(n node, display *display) {
 	}
 }
 
-func (d *Document) flush(display *display) {
+func (d *Document) flush(display *display) { //idk why this works... it's magic don't question it
+	var biggestItem displayItem
+	for _, item := range display.line { // go through every item to find the biggest font size
+		if item.fontSize > biggestItem.fontSize { //FIXME: I should really be searching for the biggest height.
+			biggestItem = item
+		}
+	}
+	biggestHeight := rl.MeasureTextEx(biggestItem.font, " ", biggestItem.fontSize, 0).Y //calculate the height
+	for _, item := range display.line {
+		//move every item down by the difference in size between the biggest one in the line and the item and add it to displayList
+		itemHeight := rl.MeasureTextEx(item.font, " ", item.fontSize, 0).Y
+		item.position.Y += biggestHeight - itemHeight
+		d.displayList = append(d.displayList, item)
+	}
+	display.line = []displayItem{}
 	display.cursorX = 20
-	display.cursorY += rl.MeasureTextEx(fonts[0], " ", display.fontSize, 0).Y
+	display.cursorY += rl.MeasureTextEx(fonts[0], " ", biggestItem.fontSize, 0).Y //move the cursor down for the next line
 	//display.cursorY += float32(fonts[0].BaseSize)
 }
