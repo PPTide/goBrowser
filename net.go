@@ -3,8 +3,9 @@ package main
 import (
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -29,11 +30,11 @@ func request(url string) (headers []string, body string, er error) {
 		return http(url, con, err)
 	} else if schema == "file" {
 		//get the content of the file
-		content, err := ioutil.ReadFile(split[1])
+		content, err := os.ReadFile(split[1])
 		checkErr(err)
 		return nil, string(content), nil
 	} else {
-		er = fmt.Errorf("schema \"" + schema + "\" not implemented") //TODO: add support for other schemas (file, view-source:, data:)
+		er = fmt.Errorf("schema \"" + schema + "\" not implemented") //TODO: add support for other schemas (view-source:, data:)
 		return
 	}
 }
@@ -56,7 +57,7 @@ func http(url string, con net.Conn, err error) (headers []string, body string, e
 	_, err = con.Write([]byte(msg))
 	checkErr(err)
 
-	reply, err := ioutil.ReadAll(con)
+	reply, err := io.ReadAll(con)
 	checkErr(err)
 
 	splitReply := strings.Split(string(reply), "\r\n")
