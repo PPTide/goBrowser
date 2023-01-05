@@ -45,6 +45,7 @@ func CreateDocument(pageUrl string) *Document {
 		panic("Got unsupported status code: " + strings.Join(status[1:], " "))
 	}
 
+	body = strings.ReplaceAll(body, "\n", " ")
 	d := Document{
 		headers: headers,
 		body:    body,
