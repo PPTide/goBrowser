@@ -11,6 +11,9 @@ const (
 	width  = 600
 	height = 450
 
+	hStep = 13
+	vStep = 18
+
 	scrollSpeed = 5
 )
 
@@ -35,7 +38,10 @@ func main() {
 
 	d := CreateDocument(pageUrl)
 	d.parseHTML()
-	d.Layout()
+	d.document = newDocumentLayout(d.nodes)
+	d.document.layout()
+	d.displayList = make([]displayItem, 0)
+	d.document.paint(&d.displayList)
 	for !rl.WindowShouldClose() {
 		d.Draw()
 	}

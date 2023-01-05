@@ -9,7 +9,8 @@ import (
 type Document struct {
 	headers     map[string]string
 	body        string
-	document    node
+	nodes       node
+	document    layout
 	displayList []displayItem
 	unfinished  []node
 }
@@ -55,7 +56,9 @@ func CreateDocument(pageUrl string) *Document {
 func (d *Document) Draw() {
 	//TODO: make better
 	if rl.IsWindowResized() {
-		d.Layout()
+		d.document.layout()
+		d.displayList = make([]displayItem, 0)
+		d.document.paint(&d.displayList)
 	}
 
 	rl.BeginDrawing()

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var SELF_CLOSING_TAGS = [...]string{
+var SelfClosingTags = [...]string{
 	"area",
 	"base",
 	"br",
@@ -23,7 +23,7 @@ var SELF_CLOSING_TAGS = [...]string{
 	"wbr",
 }
 
-var RAWTEXT_TYPES = [...]string{
+var RawtextTypes = [...]string{
 	"script",
 	"style",
 }
@@ -112,7 +112,7 @@ func (d *Document) parseHTML() {
 	rawtextType := ""
 	inComment := false
 	r := strings.NewReader(d.body)
-	d.document = &element{}
+	d.nodes = &element{}
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
@@ -162,7 +162,7 @@ func (d *Document) parseHTML() {
 			/* TODO: if added tag has special use here switch to the appropriate state:
 			 *  https://html.spec.whatwg.org/multipage/parsing.html#parsing-html-fragments:rawtext-state
 			 */
-			if arrayContains(RAWTEXT_TYPES[:], strings.Split(currentText, " ")[0]) {
+			if arrayContains(RawtextTypes[:], strings.Split(currentText, " ")[0]) {
 				inRawtext = true
 				rawtextType = strings.Split(currentText, " ")[0]
 			}
@@ -190,7 +190,7 @@ func (d *Document) finishParsing() {
 		parent := d.unfinished[len(d.unfinished)-1]
 		parent.addChild(n)
 	}
-	d.document.addChild(d.unfinished[0])
+	d.nodes.addChild(d.unfinished[0])
 	d.unfinished[0].printTree(0)
 }
 
@@ -283,7 +283,7 @@ func (d *Document) addTag(tag string) {
 		return
 	}
 
-	if tag[len(tag)-1] == '/' || arrayContains(SELF_CLOSING_TAGS[:], tagName) { //self closing tag
+	if tag[len(tag)-1] == '/' || arrayContains(SelfClosingTags[:], tagName) { //self closing tag
 		parent := d.unfinished[len(d.unfinished)-1]
 		n := &element{
 			tag:        tagName,
@@ -295,7 +295,7 @@ func (d *Document) addTag(tag string) {
 	}
 
 	//starter tag
-	parent := d.document
+	parent := d.nodes
 	if len(d.unfinished) >= 1 {
 		parent = d.unfinished[len(d.unfinished)-1]
 	}

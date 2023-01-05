@@ -1,10 +1,16 @@
 package main
 
 import (
-	"strings"
-
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"strings"
 )
+
+var blockElements = []string{"html", "body", "article", "section", "nav", "aside",
+	"h1", "h2", "h3", "h4", "h5", "h6", "hgroup", "header",
+	"footer", "address", "p", "hr", "pre", "blockquote",
+	"ol", "ul", "menu", "li", "dl", "dt", "dd", "figure",
+	"figcaption", "main", "div", "table", "form", "fieldset",
+	"legend", "details", "summary"}
 
 type displayItem struct {
 	text     string
@@ -14,109 +20,265 @@ type displayItem struct {
 	color    rl.Color
 }
 
-type display struct {
-	cursorX  float32
-	cursorY  float32
-	fontSize float32
-	line     []displayItem
+type layout interface {
+	layout()
+	paint(*[]displayItem)
+
+	Width() float32
+	Height() float32
+	X() float32
+	Y() float32
 }
 
-//TODO: turn layout into a struct
+type blockLayout struct {
+	node     node
+	parent   layout
+	previous layout
+	children []layout
 
-func (d *Document) Layout() {
-	d.displayList = make([]displayItem, 0)
-	display := display{
-		cursorX:  20,
-		cursorY:  20,
-		fontSize: 16,
-	}
-	/*d.displayList[0] = displayItem{
-		text:     d.body,
-		font:     fonts[0],
-		position: rl.NewVector2(20, 20),
-		fontSize: 16,
-		color:    rl.Black,
-	}*/
-	for _, n := range d.document.getChildren() {
-		d.recourse(n, &display)
-	}
-	d.flush(&display)
-
-	/*for _, v := range d.displayList {
-		println(v.text)
-	}*/
+	width  float32
+	height float32
+	x      float32
+	y      float32
 }
 
-func (d *Document) recourse(treeNode node, display *display) {
-	if treeNode.isText() {
-		d.displayText(treeNode, display)
+func (l *blockLayout) paint(displayList *[]displayItem) {
+	for _, child := range l.children {
+		child.paint(displayList)
+	}
+}
+
+func (l *blockLayout) X() float32 {
+	return l.x
+}
+
+func (l *blockLayout) Y() float32 {
+	return l.y
+}
+
+func (l *blockLayout) Width() float32 {
+	return l.width
+}
+
+func (l *blockLayout) Height() float32 {
+	return l.height
+}
+
+func newBlockLayout(node node, parent layout, previous layout) *blockLayout {
+	return &blockLayout{node: node, parent: parent, previous: previous}
+}
+
+func (l *blockLayout) layout() {
+	var previous layout = nil
+	for _, child := range l.node.getChildren() {
+		var next layout
+		if layoutMode(child) == "inline" {
+			next = newInlineLayout(child, l, previous)
+		} else {
+			next = newBlockLayout(child, l, previous)
+		}
+		l.children = append(l.children, next)
+		previous = next
+	}
+	l.width = l.parent.Width()
+	l.x = l.parent.X()
+	if l.previous != nil {
+		l.y = l.previous.Y() + l.previous.Height()
 	} else {
-		//TODO: open and close tag
-		if treeNode.getTag() == "h1" { //FIXME: only test
-			d.flush(display)
-			display.fontSize += 10
-		}
-		if treeNode.getTag() == "script" || treeNode.getTag() == "style" || treeNode.getTag() == "head" {
-			return
-		}
-		if treeNode.getTag() == "big" {
-			display.fontSize += 4
-		}
-		for _, c := range treeNode.getChildren() {
-			d.recourse(c, display)
-		}
-		if treeNode.getTag() == "h1" || treeNode.getTag() == "br" || treeNode.getTag() == "p" { //FIXME: only test
-			d.flush(display)
-		}
-		if treeNode.getTag() == "h1" {
-			display.fontSize -= 10
-		}
-		if treeNode.getTag() == "big" {
-			display.fontSize -= 4
-		}
+		l.y = l.parent.Y()
+	}
+	for _, child := range l.children {
+		child.layout()
+	}
+	l.height = 0
+	for _, child := range l.children {
+		l.height += child.Height()
 	}
 }
 
-func (d *Document) displayText(n node, display *display) {
+type inlineLayout struct {
+	node     node
+	parent   layout
+	previous layout
+	children []layout
+
+	width  float32
+	height float32
+	x      float32
+	y      float32
+
+	displayList []displayItem
+	cursorX     float32
+	cursorY     float32
+	fontSize    float32
+	line        []displayItem
+	//TODO: add support for `style` and `weight`
+}
+
+func (l *inlineLayout) paint(displayList *[]displayItem) {
+	*displayList = append(*displayList, l.displayList...)
+}
+
+func (l *inlineLayout) X() float32 {
+	return l.x
+}
+
+func (l *inlineLayout) Y() float32 {
+	return l.y
+}
+
+func (l *inlineLayout) Width() float32 {
+	return l.width
+}
+
+func (l *inlineLayout) Height() float32 {
+	return l.height
+}
+
+func newInlineLayout(node node, parent layout, previous layout) *inlineLayout {
+	return &inlineLayout{
+		node:     node,
+		parent:   parent,
+		previous: previous,
+	}
+}
+
+func (l *inlineLayout) layout() {
+	l.width = l.parent.Width()
+	l.x = l.parent.X()
+	if l.previous != nil {
+		l.y = l.previous.Y() + l.previous.Height()
+	} else {
+		l.y = l.parent.Y()
+	}
+
+	l.displayList = make([]displayItem, 0)
+
+	l.cursorX = l.x
+	l.cursorY = l.y
+	l.fontSize = 16
+
+	l.line = make([]displayItem, 0)
+
+	l.recourse(l.node)
+	l.flush()
+	l.height = l.cursorY - l.y
+}
+
+func (l *inlineLayout) recourse(n node) {
+	if n.isText() {
+		l.displayText(n)
+	} else {
+		l.openTag(n.getTag())
+		for _, child := range n.getChildren() {
+			l.recourse(child)
+		}
+		l.closeTag(n.getTag())
+	}
+}
+
+func (l *inlineLayout) displayText(n node) {
 	for _, w := range strings.Split(n.getText(), " ") {
 		w = strings.TrimSpace(w)
 		if len(w) == 0 {
 			continue
 		}
-		wSize := rl.MeasureTextEx(fonts[0], w, display.fontSize, 0)
+		wSize := rl.MeasureTextEx(fonts[0], w, l.fontSize, 0)
 
-		if display.cursorX+wSize.X > float32(rl.GetScreenWidth()) {
-			d.flush(display)
+		if l.cursorX+wSize.X > l.width {
+			l.flush()
 		}
 
-		display.line = append(display.line, displayItem{
+		l.line = append(l.line, displayItem{
 			text:     w,
 			font:     fonts[0],
-			position: rl.NewVector2(display.cursorX, display.cursorY),
-			fontSize: display.fontSize,
+			position: rl.NewVector2(l.cursorX, l.cursorY),
+			fontSize: l.fontSize,
 			color:    rl.Black,
 		})
 
-		display.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", display.fontSize, 0).X
+		l.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", l.fontSize, 0).X
 	}
 }
 
-func (d *Document) flush(display *display) { //idk why this works... it's magic don't question it
+func (l *inlineLayout) flush() {
 	var biggestItem displayItem
-	for _, item := range display.line { // go through every item to find the biggest font size
+	for _, item := range l.line { // go through every item to find the biggest font size
 		if item.fontSize > biggestItem.fontSize { //FIXME: I should really be searching for the biggest height.
 			biggestItem = item
 		}
 	}
 	biggestHeight := rl.MeasureTextEx(biggestItem.font, " ", biggestItem.fontSize, 0).Y //calculate the height
-	for _, item := range display.line {
+	for _, item := range l.line {
 		//move every item down by the difference in size between the biggest one in the line and the item and add it to displayList
 		itemHeight := rl.MeasureTextEx(item.font, " ", item.fontSize, 0).Y
 		item.position.Y += biggestHeight - itemHeight
-		d.displayList = append(d.displayList, item)
+		l.displayList = append(l.displayList, item)
 	}
-	display.line = []displayItem{}
-	display.cursorX = 20
-	display.cursorY += rl.MeasureTextEx(fonts[0], " ", biggestItem.fontSize, 0).Y //move the cursor down for the next line
+	l.line = []displayItem{}
+	l.cursorX = l.x
+	l.cursorY += rl.MeasureTextEx(fonts[0], " ", biggestItem.fontSize, 0).Y //move the cursor down for the next line
 	//display.cursorY += float32(fonts[0].BaseSize)
+}
+
+type documentLayout struct {
+	node     node
+	children []layout
+
+	width  float32
+	height float32
+	x      float32
+	y      float32
+}
+
+func (l *documentLayout) paint(displayList *[]displayItem) {
+	l.children[0].paint(displayList)
+}
+
+func newDocumentLayout(node node) *documentLayout {
+	return &documentLayout{node: node}
+}
+
+func (l *documentLayout) X() float32 {
+	return l.x
+}
+
+func (l *documentLayout) Y() float32 {
+	return l.y
+}
+
+func (l *documentLayout) Width() float32 {
+	return l.width
+}
+
+func (l *documentLayout) Height() float32 {
+	return l.height
+}
+
+func (l *documentLayout) layout() {
+	child := newBlockLayout(l.node, l, nil)
+	l.children = append(l.children, child)
+	l.width = float32(rl.GetScreenWidth()) - 2*hStep
+	l.x = hStep
+	l.y = vStep
+	child.layout()
+	l.height = child.height + 2*vStep
+}
+
+func layoutMode(n node) string {
+	if n.isText() {
+		return "inline"
+	} else if len(n.getChildren()) > 0 {
+		for _, child := range n.getChildren() {
+			if child.isText() {
+				continue
+			}
+			if arrayContains(blockElements, child.getTag()) {
+				return "block"
+			}
+		}
+		return "inline"
+	} else {
+		return "block"
+	}
 }
