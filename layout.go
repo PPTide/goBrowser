@@ -340,8 +340,12 @@ type documentLayout struct {
 	y      float32
 }
 
-func (l *documentLayout) paint(displayList *[]drawItem) {
-	l.children[0].paint(displayList)
+func (l *documentLayout) paint(drawList *[]drawItem) {
+	l.children[0].paint(drawList)
+	//------------------Draw-scroll-bar------------------------
+	if l.height > float32(rl.GetRenderHeight()) {
+		*drawList = append(*drawList, newDrawScroll(*l))
+	}
 }
 
 func newDocumentLayout(node node) *documentLayout {
@@ -390,4 +394,40 @@ func layoutMode(n node) string {
 	} else {
 		return "block"
 	}
+}
+
+type drawScroll struct {
+	document documentLayout
+
+	width  float32
+	height float32
+	x      float32
+	y      float32
+}
+
+func newDrawScroll(document documentLayout) *drawScroll {
+	return &drawScroll{document: document}
+}
+
+func (dScroll drawScroll) Type() string {
+	return "scroll"
+}
+
+func (dScroll drawScroll) Text() drawText {
+	panic("tried to get drawText from drawScroll")
+}
+
+func (dScroll drawScroll) Rect() drawRect {
+	panic("tried to get drawRect from drawScroll")
+}
+
+func (dScroll drawScroll) Execute() {
+	dScroll.width = 8
+	dScroll.x = float32(rl.GetRenderWidth()) - dScroll.width
+
+	screenContentRatio := float32(rl.GetRenderHeight()) / dScroll.document.height
+	dScroll.height = screenContentRatio * float32(rl.GetRenderHeight())
+	dScroll.y = -scroll * screenContentRatio
+	rec := rl.NewRectangle(dScroll.x, dScroll.y, dScroll.width, dScroll.height)
+	rl.DrawRectangleRec(rec, rl.Blue)
 }
