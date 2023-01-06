@@ -123,9 +123,6 @@ func newBlockLayout(node node, parent layout, previous layout) *blockLayout {
 }
 
 func (l *blockLayout) layout() {
-	if !l.node.isText() && l.node.getTag() == "head" {
-		return
-	}
 	var previous layout = nil
 	for _, child := range l.node.getChildren() {
 		var next layout
@@ -251,6 +248,7 @@ func newInlineLayout(node node, parent layout, previous layout) *inlineLayout {
 
 func (l *inlineLayout) layout() {
 	if !l.node.isText() && (l.node.getTag() == "head" || l.node.getTag() == "script" || l.node.getTag() == "style") {
+		l.recourse(l.node, true)
 		return
 	}
 	l.width = l.parent.Width()
@@ -269,24 +267,24 @@ func (l *inlineLayout) layout() {
 
 	l.line = make([]displayItem, 0)
 
-	l.recourse(l.node)
-	l.flush()
+	l.recourse(l.node, false)
+	l.flush(false)
 	l.height = l.cursorY - l.y
 }
 
-func (l *inlineLayout) recourse(n node) {
+func (l *inlineLayout) recourse(n node, hide bool) {
 	if n.isText() {
-		l.displayText(n)
+		l.displayText(n, hide)
 	} else {
 		l.openTag(n.getTag())
 		for _, child := range n.getChildren() {
-			l.recourse(child)
+			l.recourse(child, hide)
 		}
 		l.closeTag(n.getTag())
 	}
 }
 
-func (l *inlineLayout) displayText(n node) {
+func (l *inlineLayout) displayText(n node, hide bool) {
 	for _, w := range strings.Split(n.getText(), " ") {
 		w = strings.TrimSpace(w)
 		if len(w) == 0 {
@@ -295,7 +293,7 @@ func (l *inlineLayout) displayText(n node) {
 		wSize := rl.MeasureTextEx(fonts[0].getSize(int32(l.fontSize)), w, l.fontSize, 0)
 
 		if l.cursorX+wSize.X > l.width {
-			l.flush()
+			l.flush(hide)
 		}
 
 		l.line = append(l.line, displayItem{
@@ -310,7 +308,11 @@ func (l *inlineLayout) displayText(n node) {
 	}
 }
 
-func (l *inlineLayout) flush() {
+func (l *inlineLayout) flush(hide bool) {
+	if hide {
+		l.line = []displayItem{}
+		return
+	}
 	if len(l.line) < 1 {
 		return
 	}
