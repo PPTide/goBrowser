@@ -366,8 +366,8 @@ func (l *documentLayout) Height() float32 {
 
 func (l *documentLayout) layout() {
 	child := newBlockLayout(l.node, l, nil)
-	l.children = append(l.children, child)
-	l.width = float32(rl.GetScreenWidth()) - 2*hStep
+	l.children = []layout{child}
+	l.width = float32(rl.GetRenderWidth()) - 2*hStep
 	l.x = hStep
 	l.y = vStep
 	child.layout()
