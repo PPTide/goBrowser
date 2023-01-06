@@ -19,8 +19,30 @@ const (
 	scrollSpeed = 5
 )
 
+type fontBook struct {
+	fonts map[int32]rl.Font
+	font  string
+}
+
+func (fb *fontBook) getSize(size int32) rl.Font {
+	font, ok := fb.fonts[size]
+	if ok {
+		return font
+	}
+	font = rl.LoadFontEx(fb.font, size, nil)
+	fb.fonts[size] = font
+	return font
+}
+
+func newFontBook(font string) *fontBook {
+	return &fontBook{
+		font:  font,
+		fonts: map[int32]rl.Font{},
+	}
+}
+
 var (
-	fonts          = make([]rl.Font, 1)
+	fonts          = make([]*fontBook, 1)
 	scroll float32 = 0
 )
 
@@ -36,7 +58,7 @@ func main() { //TODO: maybe switch to sdl2
 		pageUrl = "https://browser.engineering/layout.html"
 	}
 
-	fonts[0] = rl.LoadFontEx("fonts/Arial.ttf", 64, nil) //FIXME: This helps but isn't a permanent solution
+	fonts[0] = newFontBook("fonts/Arial.ttf")
 
 	d := CreateDocument(pageUrl)
 	d.parseHTML()

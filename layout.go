@@ -292,7 +292,7 @@ func (l *inlineLayout) displayText(n node) {
 		if len(w) == 0 {
 			continue
 		}
-		wSize := rl.MeasureTextEx(fonts[0], w, l.fontSize, 0)
+		wSize := rl.MeasureTextEx(fonts[0].getSize(int32(l.fontSize)), w, l.fontSize, 0)
 
 		if l.cursorX+wSize.X > l.width {
 			l.flush()
@@ -300,17 +300,20 @@ func (l *inlineLayout) displayText(n node) {
 
 		l.line = append(l.line, displayItem{
 			text:     w,
-			font:     fonts[0],
+			font:     fonts[0].getSize(int32(l.fontSize)),
 			position: rl.NewVector2(l.cursorX, l.cursorY),
 			fontSize: l.fontSize,
 			color:    rl.Black,
 		})
 
-		l.cursorX += wSize.X + rl.MeasureTextEx(fonts[0], " ", l.fontSize, 0).X
+		l.cursorX += wSize.X + rl.MeasureTextEx(fonts[0].getSize(int32(l.fontSize)), " ", l.fontSize, 0).X
 	}
 }
 
 func (l *inlineLayout) flush() {
+	if len(l.line) < 1 {
+		return
+	}
 	var biggestItem displayItem
 	for _, item := range l.line { // go through every item to find the biggest font size
 		if item.fontSize > biggestItem.fontSize { //FIXME: I should really be searching for the biggest height.
@@ -326,7 +329,7 @@ func (l *inlineLayout) flush() {
 	}
 	l.line = []displayItem{}
 	l.cursorX = l.x
-	l.cursorY += rl.MeasureTextEx(fonts[0], " ", biggestItem.fontSize, 0).Y //move the cursor down for the next line
+	l.cursorY += rl.MeasureTextEx(fonts[0].getSize(int32(biggestItem.fontSize)), " ", biggestItem.fontSize, 0).Y //move the cursor down for the next line
 	//display.cursorY += float32(fonts[0].BaseSize)
 }
 
