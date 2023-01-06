@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -66,7 +67,7 @@ func (d *Document) Draw() {
 
 	rl.ClearBackground(rl.White)
 
-	updateScroll()
+	d.updateScroll()
 
 	for _, item := range d.displayList {
 		item.Execute()
@@ -75,9 +76,13 @@ func (d *Document) Draw() {
 	rl.EndDrawing()
 }
 
-func updateScroll() {
+func (d *Document) updateScroll() {
+	maxY := -d.document.Height() + float32(rl.GetRenderHeight())
 	scroll += rl.GetMouseWheelMove() * scrollSpeed
 	if scroll > 0 {
 		scroll = 0
+	}
+	if scroll < maxY {
+		scroll = float32(math.Min(0, float64(maxY)))
 	}
 }
