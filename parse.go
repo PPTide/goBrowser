@@ -36,6 +36,7 @@ type node interface {
 	getTag() string
 	isText() bool
 	printTree(int)
+	Attributes() map[string]string
 }
 
 type text struct {
@@ -44,11 +45,19 @@ type text struct {
 	//children []node
 }
 
+func (t *text) Attributes() map[string]string {
+	panic("Text has no Attributes")
+}
+
 type element struct {
 	tag        string
 	attributes map[string]string
 	parent     node
 	children   []node
+}
+
+func (e *element) Attributes() map[string]string {
+	return e.attributes
 }
 
 func (e *element) isText() bool {

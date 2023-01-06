@@ -173,6 +173,8 @@ type inlineLayout struct {
 }
 
 func (l *inlineLayout) paint(drawList *[]drawItem) {
+	var xOffset float32 = 0
+	//----------------------Start-Handling-Tags--------------------FIXME: temporary solution
 	if !l.node.isText() && l.node.getTag() == "head" {
 		return
 	}
@@ -187,7 +189,32 @@ func (l *inlineLayout) paint(drawList *[]drawItem) {
 			color: rl.Gray,
 		})
 	}
+	if !l.node.isText() && (l.node.getTag() == "nav" && l.node.Attributes()["class"] == "links") {
+		*drawList = append(*drawList, drawRect{
+			rect: rl.Rectangle{
+				X:      l.x,
+				Y:      l.y,
+				Width:  l.width,
+				Height: l.height,
+			},
+			color: rl.LightGray,
+		})
+	}
+	if !l.node.isText() && l.node.getTag() == "li" {
+		*drawList = append(*drawList, drawRect{
+			rect: rl.Rectangle{
+				X:      l.x + 2,
+				Y:      l.y + 5, //FIXME: This only works for fontsize 16
+				Width:  4,
+				Height: 4,
+			},
+			color: rl.Black,
+		})
+		xOffset += 8
+	}
+	//----------------------End-Handling-Tags--------------------
 	for _, item := range l.displayList {
+		item.position.X += xOffset
 		*drawList = append(*drawList, drawText{
 			text:     item.text,
 			font:     item.font,
