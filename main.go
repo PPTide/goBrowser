@@ -36,7 +36,7 @@ func main() { //TODO: maybe switch to sdl2
 		pageUrl = "https://browser.engineering/layout.html"
 	}
 
-	fonts[0] = rl.LoadFont("fonts/Arial.ttf")
+	fonts[0] = rl.LoadFontEx("fonts/Arial.ttf", 64, nil) //FIXME: This helps but isn't a permanent solution
 
 	d := CreateDocument(pageUrl)
 	d.parseHTML()
