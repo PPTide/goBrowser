@@ -7,6 +7,8 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+//TODO: add support for these thingies: "&lt", "&gt"
+
 const (
 	width  = 600
 	height = 450
@@ -22,7 +24,7 @@ var (
 	scroll float32 = 0
 )
 
-func main() {
+func main() { //TODO: maybe switch to sdl2
 	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(width, height, "Browser")
 
@@ -31,7 +33,7 @@ func main() {
 	if len(args) > 0 {
 		pageUrl = args[0]
 	} else {
-		pageUrl = "https://en.wikipedia.org/wiki/ELISA"
+		pageUrl = "https://browser.engineering/layout.html"
 	}
 
 	fonts[0] = rl.LoadFont("fonts/Arial.ttf")
@@ -40,7 +42,7 @@ func main() {
 	d.parseHTML()
 	d.document = newDocumentLayout(d.nodes)
 	d.document.layout()
-	d.displayList = make([]displayItem, 0)
+	d.displayList = make([]drawItem, 0)
 	d.document.paint(&d.displayList)
 	for !rl.WindowShouldClose() {
 		d.Draw()

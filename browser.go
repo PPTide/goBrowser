@@ -11,7 +11,7 @@ type Document struct {
 	body        string
 	nodes       node
 	document    layout
-	displayList []displayItem
+	displayList []drawItem
 	unfinished  []node
 }
 
@@ -45,7 +45,7 @@ func CreateDocument(pageUrl string) *Document {
 		panic("Got unsupported status code: " + strings.Join(status[1:], " "))
 	}
 
-	body = strings.ReplaceAll(body, "\n", " ")
+	body = strings.ReplaceAll(body, "\n", " ") //TODO: this is to harsh... i need to preserve newlines for example in <pre>
 	d := Document{
 		headers: headers,
 		body:    body,
@@ -58,7 +58,7 @@ func (d *Document) Draw() {
 	//TODO: make better
 	if rl.IsWindowResized() {
 		d.document.layout()
-		d.displayList = make([]displayItem, 0)
+		d.displayList = make([]drawItem, 0)
 		d.document.paint(&d.displayList)
 	}
 
@@ -68,9 +68,8 @@ func (d *Document) Draw() {
 
 	updateScroll()
 
-	for _, x := range d.displayList {
-		x.position.Y = x.position.Y + scroll
-		rl.DrawTextEx(x.font, x.text, x.position, x.fontSize, 0, x.color)
+	for _, item := range d.displayList {
+		item.Execute()
 	}
 
 	rl.EndDrawing()

@@ -20,9 +20,63 @@ type displayItem struct {
 	color    rl.Color
 }
 
+type drawItem interface {
+	Type() string
+	Text() drawText
+	Rect() drawRect
+	Execute()
+}
+
+type drawRect struct {
+	rect  rl.Rectangle
+	color rl.Color
+}
+
+func (dRect drawRect) Execute() {
+	dRect.rect.Y += scroll
+	rl.DrawRectangleRec(dRect.rect, dRect.color)
+}
+
+func (dRect drawRect) Type() string {
+	return "rect"
+}
+
+func (dRect drawRect) Text() drawText {
+	panic("tried to get drawText from drawRect")
+}
+
+func (dRect drawRect) Rect() drawRect {
+	return dRect
+}
+
+type drawText struct {
+	text     string
+	font     rl.Font
+	position rl.Vector2
+	fontSize float32
+	color    rl.Color
+}
+
+func (dText drawText) Execute() {
+	dText.position.Y = dText.position.Y + scroll
+	rl.DrawTextEx(dText.font, dText.text, dText.position, dText.fontSize, 0, dText.color)
+}
+
+func (dText drawText) Type() string {
+	return "text"
+}
+
+func (dText drawText) Text() drawText {
+	return dText
+}
+
+func (dText drawText) Rect() drawRect {
+	panic("tried to get drawRect from drawText")
+}
+
 type layout interface {
 	layout()
-	paint(*[]displayItem)
+	paint(*[]drawItem)
 
 	Width() float32
 	Height() float32
@@ -42,7 +96,7 @@ type blockLayout struct {
 	y      float32
 }
 
-func (l *blockLayout) paint(displayList *[]displayItem) {
+func (l *blockLayout) paint(displayList *[]drawItem) {
 	for _, child := range l.children {
 		child.paint(displayList)
 	}
@@ -69,6 +123,9 @@ func newBlockLayout(node node, parent layout, previous layout) *blockLayout {
 }
 
 func (l *blockLayout) layout() {
+	if !l.node.isText() && l.node.getTag() == "head" {
+		return
+	}
 	var previous layout = nil
 	for _, child := range l.node.getChildren() {
 		var next layout
@@ -115,8 +172,30 @@ type inlineLayout struct {
 	//TODO: add support for `style` and `weight`
 }
 
-func (l *inlineLayout) paint(displayList *[]displayItem) {
-	*displayList = append(*displayList, l.displayList...)
+func (l *inlineLayout) paint(drawList *[]drawItem) {
+	if !l.node.isText() && l.node.getTag() == "head" {
+		return
+	}
+	if !l.node.isText() && l.node.getTag() == "pre" {
+		*drawList = append(*drawList, drawRect{
+			rect: rl.Rectangle{
+				X:      l.x,
+				Y:      l.y,
+				Width:  l.width,
+				Height: l.height,
+			},
+			color: rl.Gray,
+		})
+	}
+	for _, item := range l.displayList {
+		*drawList = append(*drawList, drawText{
+			text:     item.text,
+			font:     item.font,
+			position: item.position,
+			fontSize: item.fontSize,
+			color:    item.color,
+		})
+	}
 }
 
 func (l *inlineLayout) X() float32 {
@@ -144,6 +223,9 @@ func newInlineLayout(node node, parent layout, previous layout) *inlineLayout {
 }
 
 func (l *inlineLayout) layout() {
+	if !l.node.isText() && (l.node.getTag() == "head" || l.node.getTag() == "script" || l.node.getTag() == "style") {
+		return
+	}
 	l.width = l.parent.Width()
 	l.x = l.parent.X()
 	if l.previous != nil {
@@ -231,7 +313,7 @@ type documentLayout struct {
 	y      float32
 }
 
-func (l *documentLayout) paint(displayList *[]displayItem) {
+func (l *documentLayout) paint(displayList *[]drawItem) {
 	l.children[0].paint(displayList)
 }
 

@@ -72,7 +72,7 @@ func (e *element) addChild(n node) {
 	e.children = append(e.children, n)
 }
 
-func (t *text) addChild(n node) {
+func (t *text) addChild(_ node) {
 	//e.children = append(e.children, n)
 	log.Panicf("idk why a text node should have children... if your reading this you probably know that...") //TODO: change to return err
 }
@@ -97,7 +97,8 @@ func (e *element) getParent() node {
 func (t *text) getChildren() []node {
 	log.Panicf("idk why a text node should have children... if your reading this you probably know that...") //TODO: change to return err
 	//return t.children
-	return make([]node, 0)
+	//return make([]node, 0)
+	return nil
 }
 
 func (e *element) getChildren() []node {

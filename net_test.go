@@ -4,6 +4,7 @@ import (
 	"testing"
 )
 
+//goland:noinspection SpellCheckingInspection,SpellCheckingInspection
 func TestRequestExample(t *testing.T) {
 	url := "http://example.org/"
 	_, body, err := request(url)
@@ -63,6 +64,7 @@ func TestRequestExample(t *testing.T) {
 	}
 }
 
+//goland:noinspection SpellCheckingInspection,SpellCheckingInspection
 func TestRequestHTTPS(t *testing.T) {
 	url := "https://example.org/"
 	_, body, err := request(url)
@@ -121,6 +123,7 @@ func TestRequestHTTPS(t *testing.T) {
 	}
 }
 
+//goland:noinspection SpellCheckingInspection
 func TestRequestPptiede(t *testing.T) {
 	url := "https://pptie.de/test.html"
 	_, body, err := request(url)
@@ -141,6 +144,7 @@ func TestRequestPortErr(t *testing.T) {
 	}
 }
 
+//goland:noinspection SpellCheckingInspection,SpellCheckingInspection,SpellCheckingInspection
 func TestRequestSchemeErr(t *testing.T) {
 	url := "gbrk://pptie.de/"
 	_, _, err := request(url)
