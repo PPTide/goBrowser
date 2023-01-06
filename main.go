@@ -8,7 +8,6 @@ import (
 )
 
 //TODO: add support for these thingies: "&lt", "&gt"
-//TODO: add support for anonymous block boxes (https://browser.engineering/layout.html#exercises)
 
 const (
 	width  = 600

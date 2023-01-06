@@ -247,9 +247,6 @@ func getAttributes(attribString string) (attribs map[string]string) {
 		return nil
 	}
 	attribs = map[string]string{}
-	if attribString[len(attribString)-1] == '/' {
-		attribString = attribString[:len(attribString)-1]
-	}
 	attribPairs := strings.Split(attribString, " ")
 	for i := 0; i < len(attribPairs); i++ {
 		attribPair := attribPairs[i]
