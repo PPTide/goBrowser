@@ -127,15 +127,27 @@ func (l *blockLayout) layout() {
 		return
 	}
 	var previous layout = nil
+	inlineNodes := make([]node, 0)
 	for _, child := range l.node.getChildren() {
 		var next layout
 		if layoutMode(child) == "inline" {
-			next = newInlineLayout(child, l, previous)
+			inlineNodes = append(inlineNodes, child)
+			//next = newInlineLayout(child, l, previous)
 		} else {
+			if len(inlineNodes) > 0 {
+				next = newInlineLayout(inlineNodes, l, previous)
+				inlineNodes = make([]node, 0)
+				previous = next
+				l.children = append(l.children, next)
+			}
 			next = newBlockLayout(child, l, previous)
+			previous = next
+			l.children = append(l.children, next)
 		}
+	}
+	if len(inlineNodes) > 0 {
+		next := newInlineLayout(inlineNodes, l, previous)
 		l.children = append(l.children, next)
-		previous = next
 	}
 	l.width = l.parent.Width()
 	l.x = l.parent.X()
@@ -154,7 +166,7 @@ func (l *blockLayout) layout() {
 }
 
 type inlineLayout struct {
-	node     node
+	nodes    []node
 	parent   layout
 	previous layout
 	children []layout
@@ -174,43 +186,46 @@ type inlineLayout struct {
 
 func (l *inlineLayout) paint(drawList *[]drawItem) {
 	var xOffset float32 = 0
-	//----------------------Start-Handling-Tags--------------------FIXME: temporary solution
-	if !l.node.isText() && l.node.getTag() == "head" {
-		return
-	}
-	if !l.node.isText() && l.node.getTag() == "pre" {
-		*drawList = append(*drawList, drawRect{
-			rect: rl.Rectangle{
-				X:      l.x,
-				Y:      l.y,
-				Width:  l.width,
-				Height: l.height,
-			},
-			color: rl.Gray,
-		})
-	}
-	if !l.node.isText() && (l.node.getTag() == "nav" && l.node.Attributes()["class"] == "links") {
-		*drawList = append(*drawList, drawRect{
-			rect: rl.Rectangle{
-				X:      l.x,
-				Y:      l.y,
-				Width:  l.width,
-				Height: l.height,
-			},
-			color: rl.LightGray,
-		})
-	}
-	if !l.node.isText() && l.node.getTag() == "li" {
-		*drawList = append(*drawList, drawRect{
-			rect: rl.Rectangle{
-				X:      l.x + 2,
-				Y:      l.y + 5, //FIXME: This only works for fontsize 16
-				Width:  4,
-				Height: 4,
-			},
-			color: rl.Black,
-		})
-		xOffset += 8
+	for _, node := range l.nodes {
+		xOffset = 0
+		//----------------------Start-Handling-Tags--------------------FIXME: temporary solution
+		if !node.isText() && node.getTag() == "head" {
+			return
+		}
+		if !node.isText() && node.getTag() == "pre" {
+			*drawList = append(*drawList, drawRect{
+				rect: rl.Rectangle{
+					X:      l.x,
+					Y:      l.y,
+					Width:  l.width,
+					Height: l.height,
+				},
+				color: rl.Gray,
+			})
+		}
+		if !node.isText() && (node.getTag() == "nav" && node.Attributes()["class"] == "links") {
+			*drawList = append(*drawList, drawRect{
+				rect: rl.Rectangle{
+					X:      l.x,
+					Y:      l.y,
+					Width:  l.width,
+					Height: l.height,
+				},
+				color: rl.LightGray,
+			})
+		}
+		if !node.isText() && node.getTag() == "li" {
+			*drawList = append(*drawList, drawRect{
+				rect: rl.Rectangle{
+					X:      l.x + 2, //FIXME: This doesn't work with line wraps
+					Y:      l.y + 5, //FIXME: This only works for fontsize 16
+					Width:  4,
+					Height: 4,
+				},
+				color: rl.Black,
+			})
+			xOffset += 8
+		}
 	}
 	//----------------------End-Handling-Tags--------------------
 	for _, item := range l.displayList {
@@ -241,35 +256,37 @@ func (l *inlineLayout) Height() float32 {
 	return l.height
 }
 
-func newInlineLayout(node node, parent layout, previous layout) *inlineLayout {
+func newInlineLayout(nodes []node, parent layout, previous layout) *inlineLayout {
 	return &inlineLayout{
-		node:     node,
+		nodes:    nodes,
 		parent:   parent,
 		previous: previous,
 	}
 }
 
 func (l *inlineLayout) layout() {
-	if !l.node.isText() && (l.node.getTag() == "head" || l.node.getTag() == "script" || l.node.getTag() == "style") {
-		return
-	}
+	l.displayList = make([]displayItem, 0)
+	l.line = make([]displayItem, 0)
+
 	l.width = l.parent.Width()
 	l.x = l.parent.X()
+
 	if l.previous != nil {
-		l.y = l.previous.Y() + l.previous.Height()
+		l.y = l.previous.Y() + l.previous.Height() //Maybe they don't
 	} else {
 		l.y = l.parent.Y()
 	}
 
-	l.displayList = make([]displayItem, 0)
-
 	l.cursorX = l.x
 	l.cursorY = l.y
 	l.fontSize = 16
+	for _, node := range l.nodes {
+		if !node.isText() && (node.getTag() == "head" || node.getTag() == "script" || node.getTag() == "style") {
+			continue
+		}
 
-	l.line = make([]displayItem, 0)
-
-	l.recourse(l.node)
+		l.recourse(node)
+	}
 	l.flush()
 	l.height = l.cursorY - l.y
 }
