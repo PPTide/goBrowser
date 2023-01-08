@@ -2,6 +2,7 @@ package main
 
 import (
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"log"
 	"strings"
 )
 
@@ -188,33 +189,18 @@ func (l *inlineLayout) paint(drawList *[]drawItem) {
 	var xOffset float32 = 0
 	for _, node := range l.nodes {
 		xOffset = 0
+		if node.isText() {
+			continue
+		}
+		bgcolor := rl.Color{A: 0}
 		//----------------------Start-Handling-Tags--------------------FIXME: temporary solution
-		if !node.isText() && node.getTag() == "head" {
+		if node.getTag() == "head" {
 			return
 		}
-		if !node.isText() && node.getTag() == "pre" {
-			*drawList = append(*drawList, drawRect{
-				rect: rl.Rectangle{
-					X:      l.x,
-					Y:      l.y,
-					Width:  l.width,
-					Height: l.height,
-				},
-				color: rl.Gray,
-			})
+		if node.getTag() == "nav" && node.Attributes()["class"] == "links" {
+			bgcolor = rl.LightGray
 		}
-		if !node.isText() && (node.getTag() == "nav" && node.Attributes()["class"] == "links") {
-			*drawList = append(*drawList, drawRect{
-				rect: rl.Rectangle{
-					X:      l.x,
-					Y:      l.y,
-					Width:  l.width,
-					Height: l.height,
-				},
-				color: rl.LightGray,
-			})
-		}
-		if !node.isText() && node.getTag() == "li" {
+		if node.getTag() == "li" {
 			*drawList = append(*drawList, drawRect{
 				rect: rl.Rectangle{
 					X:      l.x + 2, //FIXME: This doesn't work with line wraps
@@ -226,8 +212,28 @@ func (l *inlineLayout) paint(drawList *[]drawItem) {
 			})
 			xOffset += 8
 		}
+		//----------------------End-Handling-Tags--------------------
+		bgcolorTmp, ok := (*node.Style())["background-color"]
+		if ok {
+			switch bgcolorTmp {
+			case "lightblue":
+				bgcolor = rl.NewColor(173, 216, 230, 255)
+			default:
+				log.Panicf("[InlineLayout paint()] background-color is '%s', which is not supported", bgcolorTmp)
+			}
+		}
+		if bgcolor.A != 0 {
+			*drawList = append(*drawList, drawRect{
+				rect: rl.Rectangle{ //FIXME: This uses the position and size of all nodes, not only the one wanted
+					X:      l.x,
+					Y:      l.y,
+					Width:  l.width,
+					Height: l.height,
+				},
+				color: bgcolor,
+			})
+		}
 	}
-	//----------------------End-Handling-Tags--------------------
 	for _, item := range l.displayList {
 		item.position.X += xOffset
 		*drawList = append(*drawList, drawText{
@@ -401,7 +407,8 @@ func (l *documentLayout) layout() {
 func layoutMode(n node) string {
 	if n.isText() {
 		return "inline"
-	} else if len(n.getChildren()) > 0 {
+	}
+	if len(n.getChildren()) > 0 {
 		for _, child := range n.getChildren() {
 			if child.isText() {
 				continue

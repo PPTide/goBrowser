@@ -1,8 +1,10 @@
 package main
 
 func (l *inlineLayout) openTag(tag string) {
-	if tag == "h1" { //FIXME: only test
+	if arrayContains(blockElements, tag) { //FIXME: only test
 		l.flush()
+	}
+	if tag == "h1" {
 		l.fontSize += 10
 	}
 	if tag == "script" || tag == "style" || tag == "head" {
@@ -14,7 +16,7 @@ func (l *inlineLayout) openTag(tag string) {
 }
 
 func (l *inlineLayout) closeTag(tag string) {
-	if tag == "h1" || tag == "br" || tag == "p" { //FIXME: only test
+	if arrayContains(blockElements, tag) || tag == "br" { //FIXME: only test
 		l.flush()
 	}
 	if tag == "h1" {

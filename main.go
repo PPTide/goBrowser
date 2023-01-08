@@ -55,13 +55,14 @@ func main() { //TODO: maybe switch to sdl2
 	if len(args) > 0 {
 		pageUrl = args[0]
 	} else {
-		pageUrl = "https://browser.engineering/layout.html"
+		pageUrl = "https://browser.engineering/styles.html"
 	}
 
 	fonts[0] = newFontBook("fonts/Arial.ttf")
 
 	d := CreateDocument(pageUrl)
 	d.parseHTML()
+	style(d.nodes)
 	d.document = newDocumentLayout(d.nodes)
 	d.document.layout()
 	d.displayList = make([]drawItem, 0)

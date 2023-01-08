@@ -37,12 +37,17 @@ type node interface {
 	isText() bool
 	printTree(int)
 	Attributes() map[string]string
+	Style() *map[string]string
 }
 
 type text struct {
 	text   string
 	parent node
 	//children []node
+}
+
+func (t *text) Style() *map[string]string {
+	panic("Text has no Style")
 }
 
 func (t *text) Attributes() map[string]string {
@@ -54,6 +59,11 @@ type element struct {
 	attributes map[string]string
 	parent     node
 	children   []node
+	style      map[string]string
+}
+
+func (e *element) Style() *map[string]string {
+	return &e.style
 }
 
 func (e *element) Attributes() map[string]string {
