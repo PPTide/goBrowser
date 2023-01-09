@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 
@@ -44,9 +45,16 @@ func newFontBook(font string) *fontBook {
 var (
 	fonts          = make([]*fontBook, 1)
 	scroll float32 = 0
+
+	entities map[string]map[string]string //TODO: idk if this is the best idea...?
 )
 
 func main() { //TODO: maybe switch to sdl2
+	entitiesJSON, err := os.ReadFile("data/entities.json")
+	checkErr(err)
+	err = json.Unmarshal(entitiesJSON, &entities)
+	checkErr(err)
+
 	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(width, height, "Browser")
 

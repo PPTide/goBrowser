@@ -23,8 +23,6 @@ type displayItem struct {
 
 type drawItem interface {
 	Type() string
-	Text() drawText
-	Rect() drawRect
 	Execute()
 }
 
@@ -42,14 +40,6 @@ func (dRect drawRect) Type() string {
 	return "rect"
 }
 
-func (dRect drawRect) Text() drawText {
-	panic("tried to get drawText from drawRect")
-}
-
-func (dRect drawRect) Rect() drawRect {
-	return dRect
-}
-
 type drawText struct {
 	text     string
 	font     rl.Font
@@ -65,14 +55,6 @@ func (dText drawText) Execute() {
 
 func (dText drawText) Type() string {
 	return "text"
-}
-
-func (dText drawText) Text() drawText {
-	return dText
-}
-
-func (dText drawText) Rect() drawRect {
-	panic("tried to get drawRect from drawText")
 }
 
 type layout interface {

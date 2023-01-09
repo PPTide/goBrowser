@@ -128,6 +128,7 @@ func (d *Document) parseHTML() {
 	//TODO: implement Documentation: https://html.spec.whatwg.org/multipage/parsing.html#tokenization
 	currentText := ""
 	inTag := false
+	inCharRef := false
 	inRawtext := false
 	rawtextType := ""
 	inComment := false
@@ -136,6 +137,20 @@ func (d *Document) parseHTML() {
 	for r.Len() > 0 {
 		c, _, err := r.ReadRune()
 		checkErr(err)
+		if inCharRef {
+			if r.Len() == 0 {
+				_, err = r.Seek(int64(-1*len(currentText)), 1)
+				checkErr(err)
+				currentText = "&"
+				inCharRef = false
+				continue
+			}
+			if entity, ok := entities[currentText]; ok {
+				currentText = entity["characters"]
+				inCharRef = false
+				continue
+			}
+		}
 		if inComment && c == '-' {
 			r1, _, err := r.ReadRune()
 			checkErr(err)
@@ -190,6 +205,10 @@ func (d *Document) parseHTML() {
 				inRawtext = false
 			}
 			currentText = ""
+		case '&':
+			inCharRef = true
+			d.addText(currentText)
+			currentText = "&"
 		default:
 			currentText += string(c)
 		}
