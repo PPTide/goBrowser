@@ -46,14 +46,39 @@ var (
 	fonts          = make([]*fontBook, 1)
 	scroll float32 = 0
 
-	entities map[string]map[string]string //TODO: idk if this is the best idea...?
+	entitiesTmp map[string]map[string]interface{}
+	entities    map[string]entity
 )
+
+type entity struct {
+	characters string
+	codepoints []float64
+}
 
 func main() { //TODO: maybe switch to sdl2
 	entitiesJSON, err := os.ReadFile("data/entities.json")
 	checkErr(err)
-	err = json.Unmarshal(entitiesJSON, &entities)
+	err = json.Unmarshal(entitiesJSON, &entitiesTmp)
 	checkErr(err)
+	entities = make(map[string]entity, 0)
+	//Transform map[string]map[string]interface{} into map[string]entity
+	for key1, entityTmp := range entitiesTmp {
+		e := entity{}
+		for key, value := range entityTmp {
+			if key == "characters" {
+				e.characters = value.(string)
+				continue
+			}
+			if key == "codepoints" {
+				codepointsTmp := value.([]interface{})
+				e.codepoints = make([]float64, 0)
+				for _, codepoint := range codepointsTmp {
+					e.codepoints = append(e.codepoints, codepoint.(float64))
+				}
+			}
+		}
+		entities[key1] = e
+	}
 
 	rl.SetConfigFlags(rl.FlagWindowResizable)
 	rl.InitWindow(width, height, "Browser")

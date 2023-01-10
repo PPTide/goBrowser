@@ -145,8 +145,8 @@ func (d *Document) parseHTML() {
 				inCharRef = false
 				continue
 			}
-			if entity, ok := entities[currentText]; ok {
-				currentText = entity["characters"]
+			if e, ok := entities[currentText]; ok {
+				currentText = e.characters
 				inCharRef = false
 				continue
 			}
