@@ -114,7 +114,7 @@ func (l *blockLayout) layout() {
 	for _, child := range l.node.getChildren() {
 		var next layout
 		if layoutMode(child) == "inline" {
-			inlineNodes = append(inlineNodes, child)
+			inlineNodes = append(inlineNodes, child) //FIXME: Don't do this if the child has a different Style
 			//next = newInlineLayout(child, l, previous)
 		} else {
 			if len(inlineNodes) > 0 {
