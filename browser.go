@@ -38,10 +38,7 @@ func CreateDocument(pageUrl string) *Document {
 	switch status[1] {
 	case "200":
 		break
-	case "301":
-		locationURL := headers["location"]
-		return CreateDocument(locationURL)
-	case "302":
+	case "301", "302":
 		locationURL := headers["location"]
 		return CreateDocument(locationURL)
 	default:
