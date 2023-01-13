@@ -45,6 +45,9 @@ func http(url string, con net.Conn, err error) (headers []string, body string, e
 	split := strings.SplitN(url, "://", 2)
 
 	split = strings.SplitN(split[1], "/", 2)
+	if len(split) < 2 {
+		split = append(split, "/")
+	}
 	host := split[0]
 	path := "/" + split[1]
 	_ = path
