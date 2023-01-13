@@ -146,7 +146,7 @@ func (d *Document) parseHTML() {
 				continue
 			}
 			if e, ok := entities[currentText]; ok {
-				currentText = e.characters
+				currentText = e.Characters
 				inCharRef = false
 				continue
 			}
