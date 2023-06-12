@@ -67,6 +67,7 @@ func main() { //TODO: maybe switch to sdl2
 
 	d := CreateDocument(pageUrl)
 	d.parseHTML()
+	d.nodes.printTree(0)
 	style(d.nodes)
 	d.document = newDocumentLayout(d.nodes)
 	d.document.layout()
